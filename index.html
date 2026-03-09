@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Carga de Tareas - NCR</title>
+    <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f0f2f5;
+            margin: 0;
+            padding: 15px;
+            color: #333;
+        }
+        .container {
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            max-width: 500px;
+            margin: auto;
+        }
+        h2 { text-align: center; color: #0056b3; font-size: 22px; margin-top: 0;}
+        .form-group { margin-bottom: 15px; }
+        label { display: block; font-weight: bold; margin-bottom: 5px; font-size: 14px; }
+        input[type="text"], input[type="date"], input[type="number"], input[type="password"] {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            box-sizing: border-box;
+            font-size: 16px;
+        }
+        .row { display: flex; gap: 10px; }
+        .row .form-group { flex: 1; }
+        button {
+            width: 100%;
+            padding: 12px;
+            background-color: #0056b3;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            font-size: 16px;
+            cursor: pointer;
+            margin-top: 10px;
+            font-weight: bold;
+        }
+        button:hover { background-color: #004494; }
+        .btn-success { background-color: #28a745; margin-bottom: 15px;}
+        .btn-success:hover { background-color: #218838; }
+        .btn-danger { background-color: #dc3545; }
+        #opcionesRuta { margin-top: 10px; display: flex; flex-direction: column; gap: 8px; }
+        .ruta-btn { background-color: #e2e8f0; color: #333; border: 1px solid #cbd5e1; }
+        .ruta-btn.seleccionada { background-color: #10b981; color: white; border-color: #059669;}
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 12px; }
+        th, td { border: 1px solid #ddd; padding: 6px; text-align: left; }
+        th { background-color: #f8f9fa; }
+        .table-container { overflow-x: auto; }
+        
+        /* Ocultar la app por defecto */
+        #appScreen { display: none; }
+    </style>
+</head>
+<body>
+
+<div id="loginScreen" class="container" style="margin-top: 50px;">
+    <h2>Acceso Restringido</h2>
+    <div class="form-group">
+        <label>Usuario</label>
+        <input type="text" id="username" placeholder="Ingresa tu usuario">
+    </div>
+    <div class="form-group">
+        <label>Contraseña</label>
+        <input type="password" id="password" placeholder="Ingresa tu contraseña">
+    </div>
+    <button onclick="verificarLogin()">Ingresar</button>
+    <p id="errorLogin" style="color: red; display: none; text-align: center; font-weight: bold;">Credenciales incorrectas</p>
+</div>
+
+<div id="appScreen" class="container">
+    <h2>Registro de Tareas</h2>
+    
+    <div class="form-group">
+        <label>Fecha</label>
+        <input type="date" id="fecha" required>
+    </div>
+
+    <div class="form-group">
+        <label>Task (ID)</label>
+        <input type="text" id="task" placeholder="Ej: 8533510834">
+    </div>
+
+    <div class="form-group">
+        <label>Ruta Desde</label>
+        <input type="text" id="rutaDesde" value="Casa Luna, RN12 km 456, E3118 Sauce Montrull, Entre Ríos">
+    </div>
+
+    <div class="form-group">
+        <label>Ruta Hasta (Banco/Cliente)</label>
+        <input type="text" id="rutaHasta" placeholder="Ej: Banco Entre Ríos...">
+    </div>
+
+    <button type="button" onclick="calcularRutas()" style="background-color: #6c757d;">📍 Calcular Opciones de Ruta</button>
+    
+    <div id="opcionesRuta"></div>
+
+    <div class="form-group" style="margin-top: 15px;">
+        <label>KM (Seleccionado o Manual)</label>
+        <input type="number" step="0.1" id="km" placeholder="0">
+    </div>
+
+    <div class="row">
+        <div class="form-group">
+            <label>Estacionamiento</label>
+            <input type="number" id="estacionamiento" placeholder="$">
+        </div>
+        <div class="form-group">
+            <label>Peajes</label>
+            <input type="number" id="peajes" placeholder="$">
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="form-group">
+            <label>Otros Adic.</label>
+            <input type="number" id="otros" placeholder="$">
+        </div>
+    </div>
+
+    <div class="form-group">
+        <label>Comentarios</label>
+        <input type="text" id="comentarios" placeholder="Opcional">
+    </div>
+
+    <button onclick="guardarTarea()">💾 Guardar Tarea</button>
+
+    <hr style="margin: 25px 0;">
+
+    <button class="btn-success" onclick="exportarExcel()">📊 Descargar Excel</button>
+    <button class="btn-danger" onclick="borrarDatos()">🗑️ Borrar Todos los Datos</button>
+
+    <h3 style="font-size: 16px; margin-top: 20px;">Tareas Pendientes de Exportar: <span id="contador">0</span></h3>
+    <div class="table-container">
+        <table id="tablaVista">
+            <thead>
+                <tr>
+                    <th>Día</th>
+                    <th>Task</th>
+                    <th>KM</th>
+                </tr>
+            </thead>
+            <tbody></tbody>
+        </table>
+    </div>
+</div>
+
+<script async defer src="https://maps.googleapis.com/maps/api/js?key=TU_API_KEY_DE_GOOGLE_AQUI&libraries=places"></script>
+
+<script>
+    // --- LÓGICA DE LOGIN ---
+    function verificarLogin() {
+        const usu = document.getElementById("username").value;
+        const pass = document.getElementById("password").value;
+        
+        // AQUÍ PUEDES CAMBIAR TU USUARIO Y CONTRASEÑA
+        if(usu === "admin" && pass === "ncr2026") {
+            // Guarda una sesión en el teléfono para no pedir clave a cada rato
+            sessionStorage.setItem("accesoPermitido", "true"); 
+            mostrarApp();
+        } else {
+            document.getElementById("errorLogin").style.display = "block";
+        }
+    }
+
+    function mostrarApp() {
+        document.getElementById("loginScreen").style.display = "none";
+        document.getElementById("appScreen").style.display = "block";
+    }
+
+    // --- LÓGICA DE LA APP ---
+    let directionsService;
+    let tareasGuardadas = JSON.parse(localStorage.getItem('tareasNCR')) || [];
+
+    window.onload = function() {
+        // Verificar si ya ingresaste la clave en esta sesión
+        if(sessionStorage.getItem("accesoPermitido") === "true") {
+            mostrarApp();
+        }
+
+        document.getElementById('fecha').valueAsDate = new Date();
+        actualizarTabla();
+
+        setTimeout(() => {
+            directionsService = new google.maps.DirectionsService();
+            new google.maps.places.Autocomplete(document.getElementById('rutaDesde'), { componentRestrictions: { country: "ar" } });
+            new google.maps.places.Autocomplete(document.getElementById('rutaHasta'), { componentRestrictions: { country: "ar" } });
+        }, 1000);
+    };
+
+    function calcularRutas() {
+        const origen = document.getElementById("rutaDesde").value;
+        const destino = document.getElementById("rutaHasta").value;
+
+        if(!origen || !destino) {
+            alert("Completa origen y destino");
+            return;
+        }
+
+        const request = {
+            origin: origen,
+            destination: destino,
+            travelMode: 'DRIVING',
+            provideRouteAlternatives: true
+        };
+
+        directionsService.route(request, function(result, status) {
+            if (status == 'OK') {
+                const contenedor = document.getElementById("opcionesRuta");
+                contenedor.innerHTML = ""; 
+                
+                result.routes.forEach((ruta, index) => {
+                    const distanciaTexto = ruta.legs[0].distance.text;
+                    const distanciaValor = (ruta.legs[0].distance.value / 1000).toFixed(1);
+                    
+                    const btn = document.createElement("button");
+                    btn.className = "ruta-btn";
+                    btn.innerText = `Ruta ${index + 1}: ${distanciaTexto} (${ruta.summary})`;
+                    btn.onclick = function() {
+                        document.querySelectorAll('.ruta-btn').forEach(b => b.classList.remove('seleccionada'));
+                        this.classList.add('seleccionada');
+                        document.getElementById("km").value = distanciaValor;
+                    };
+                    contenedor.appendChild(btn);
+                });
+            } else {
+                alert("No se pudieron calcular las rutas. Verifica las direcciones.");
+            }
+        });
+    }
+
+    function guardarTarea() {
+        const fechaInput = document.getElementById("fecha").value;
+        if(!fechaInput) return alert("Falta la fecha");
+
+        const fechaObj = new Date(fechaInput + 'T12:00:00');
+        const meses = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
+        const dias = ["domingo", "lunes", "martes", "miércoles", "jueves", "viernes", "sábado"];
+        
+        const mes = meses[fechaObj.getMonth()];
+        const dia = dias[fechaObj.getDay()];
+
+        const tarea = {
+            Tecnico: "Barboza Cristian",
+            Mes: mes,
+            Fecha: fechaInput,
+            Dia: dia,
+            Task: document.getElementById("task").value,
+            RutaDesde: document.getElementById("rutaDesde").value,
+            RutaHasta: document.getElementById("rutaHasta").value,
+            KM: parseFloat(document.getElementById("km").value) || "",
+            Estacionamiento: document.getElementById("estacionamiento").value || "",
+            Peajes: document.getElementById("peajes").value || "",
+            Otros: document.getElementById("otros").value || "",
+            Comentarios: document.getElementById("comentarios").value || ""
+        };
+
+        tareasGuardadas.push(tarea);
+        localStorage.setItem('tareasNCR', JSON.stringify(tareasGuardadas));
+        
+        document.getElementById("task").value = "";
+        document.getElementById("rutaDesde").value = document.getElementById("rutaHasta").value; 
+        document.getElementById("rutaHasta").value = "";
+        document.getElementById("km").value = "";
+        document.getElementById("estacionamiento").value = "";
+        document.getElementById("peajes").value = "";
+        document.getElementById("otros").value = "";
+        document.getElementById("comentarios").value = "";
+        document.getElementById("opcionesRuta").innerHTML = "";
+
+        actualizarTabla();
+    }
+
+    function actualizarTabla() {
+        const tbody = document.querySelector("#tablaVista tbody");
+        tbody.innerHTML = "";
+        document.getElementById("contador").innerText = tareasGuardadas.length;
+
+        tareasGuardadas.slice().reverse().forEach(t => {
+            const tr = document.createElement("tr");
+            tr.innerHTML = `<td>${t.Fecha.split('-').reverse().join('/')}</td><td>${t.Task}</td><td>${t.KM}</td>`;
+            tbody.appendChild(tr);
+        });
+    }
+
+    function exportarExcel() {
+        if(tareasGuardadas.length === 0) return alert("No hay datos para exportar");
+
+        const datosExcel = tareasGuardadas.map(t => ({
+            "Técnico": t.Tecnico,
+            "Mes": t.Mes,
+            "Fecha": t.Fecha,
+            "Día": t.Dia,
+            "Task": t.Task,
+            "Ruta desde (dirección)": t.RutaDesde,
+            "Ruta hasta (dirección)": t.RutaHasta,
+            "KM": t.KM,
+            "Estacionamiento": t.Estacionamiento,
+            "Peajes": t.Peajes,
+            "Otros Adicionales": t.Otros,
+            "Comentarios": t.Comentarios
+        }));
+
+        const worksheet = XLSX.utils.json_to_sheet(datosExcel);
+        const workbook = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(workbook, worksheet, "Adicionales");
+
+        const mesExportacion = tareasGuardadas[0].Mes; 
+        XLSX.writeFile(workbook, `Reporte_adicionales_${mesExportacion}.xlsx`);
+    }
+
+    function borrarDatos() {
+        if(confirm("¿Estás seguro de que quieres borrar todas las tareas guardadas? Asegúrate de haberlas descargado en Excel primero.")) {
+            tareasGuardadas = [];
+            localStorage.removeItem('tareasNCR');
+            actualizarTabla();
+        }
+    }
+</script>
+</body>
+</html>
