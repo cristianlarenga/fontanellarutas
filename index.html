@@ -299,7 +299,7 @@
         const datosExcel = tareasGuardadas.map(t => ({
             "Técnico": t.Tecnico,
             "Mes": t.Mes,
-            "Fecha": t.Fecha,
+            "Fecha": t.Fecha.split('-').reverse().join('/'),
             "Día": t.Dia,
             "Task": t.Task,
             "Ruta desde (dirección)": t.RutaDesde,
@@ -330,3 +330,4 @@
 </body>
 
 </html>
+
