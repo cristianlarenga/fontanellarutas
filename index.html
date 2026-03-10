@@ -147,6 +147,8 @@
                 <tr>
                     <th>Día</th>
                     <th>Task</th>
+                    <th>Desde</th>
+                    <th>Hasta</th>
                     <th>KM</th>
                 </tr>
             </thead>
@@ -288,7 +290,7 @@
 
         tareasGuardadas.slice().reverse().forEach(t => {
             const tr = document.createElement("tr");
-            tr.innerHTML = `<td>${t.Fecha.split('-').reverse().join('/')}</td><td>${t.Task}</td><td>${t.KM}</td>`;
+            tr.innerHTML = `<td>${t.Fecha.split('-').reverse().join('/')}</td><td>${t.Task}</td><td>${t.RutaDesde}</td><td>${t.RutaHasta}</td><td>${t.KM}</td>`;
             tbody.appendChild(tr);
         });
     }
@@ -330,4 +332,5 @@
 </body>
 
 </html>
+
 
