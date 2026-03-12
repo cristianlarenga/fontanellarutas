@@ -178,8 +178,12 @@
         const usu = document.getElementById("username").value;
         const pass = document.getElementById("password").value;
         
-        // AQUÍ PUEDES CAMBIAR TU USUARIO Y CONTRASEÑA
-        if(usu === "admin" && pass === "ncr2026") {
+        // Verificamos si los datos coinciden con alguno de los 3 usuarios permitidos
+        if (
+            (usu === "admin" && pass === "ncr2026") || 
+            (usu === "miguel" && pass === "fontanella") || 
+            (usu === "cristian" && pass === "19233223")
+        ) {
             // Guarda una sesión en el teléfono para no pedir clave a cada rato
             sessionStorage.setItem("accesoPermitido", "true"); 
             mostrarApp();
@@ -368,6 +372,7 @@
 </body>
 
 </html>
+
 
 
 
