@@ -60,6 +60,18 @@
         
         /* Ocultar la app por defecto */
         #appScreen { display: none; }
+        .btn-eliminar {
+            background-color: #dc3545;
+            color: white;
+            border: none;
+            border-radius: 3px;
+            padding: 4px 8px;
+            cursor: pointer;
+            font-size: 10px;
+            margin-top: 0;
+            width: auto;
+        }
+        .btn-eliminar:hover { background-color: #c82333; }
     </style>
 </head>
 <body>
@@ -150,6 +162,7 @@
                     <th>Desde</th>
                     <th>Hasta</th>
                     <th>KM</th>
+                    <th></th> </tr>
                 </tr>
             </thead>
             <tbody></tbody>
@@ -288,11 +301,34 @@
         tbody.innerHTML = "";
         document.getElementById("contador").innerText = tareasGuardadas.length;
 
-        tareasGuardadas.slice().reverse().forEach(t => {
+        // Recorremos las tareas y calculamos su índice real en la memoria
+        tareasGuardadas.slice().reverse().forEach((t, indexReverso) => {
+            const indiceReal = tareasGuardadas.length - 1 - indexReverso;
             const tr = document.createElement("tr");
-            tr.innerHTML = `<td>${t.Fecha.split('-').reverse().join('/')}</td><td>${t.Task}</td><td>${t.RutaDesde}</td><td>${t.RutaHasta}</td><td>${t.KM}</td>`;
+            
+            tr.innerHTML = `
+                <td>${t.Fecha.split('-').reverse().join('/')}</td>
+                <td>${t.Task}</td>
+                <td>${t.RutaDesde}</td>
+                <td>${t.RutaHasta}</td>
+                <td>${t.KM}</td>
+                <td style="text-align: center;">
+                    <button class="btn-eliminar" onclick="eliminarTarea(${indiceReal})">❌</button>
+                </td>
+            `;
             tbody.appendChild(tr);
         });
+    }
+
+    function eliminarTarea(indice) {
+        if(confirm("¿Estás seguro de eliminar la tarea seleccionada?")) {
+            // Elimina exactamente 1 elemento en la posición 'indice'
+            tareasGuardadas.splice(indice, 1); 
+            // Guarda la nueva lista actualizada en el teléfono
+            localStorage.setItem('tareasNCR', JSON.stringify(tareasGuardadas)); 
+            // Recarga la tabla para que desaparezca la fila
+            actualizarTabla(); 
+        }
     }
 
     function exportarExcel() {
@@ -332,5 +368,6 @@
 </body>
 
 </html>
+
 
 
